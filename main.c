@@ -5,7 +5,8 @@ typedef enum Action
 {
     FAILED,
     TIMELINE,
-    ERRORS
+    ERRORS,
+    WIEN_TIMELINE
 }Action;
 
 /**********************************/
@@ -13,15 +14,15 @@ typedef enum Action
 /**********************************/
 
 #define ALLOC_ERR "Error: failed to allocate memory."
-#define ARGS_ERR "Usage: <timeline|errors> "\
+#define ARGS_ERR "Usage: <timeline|errors|wien_timeline> "\
 "<analytic|euler|midpoint|runge_kutta>.\n"
-
 #define ANALYTIC_STR "analytic"
 #define EULER_STR "euler"
 #define MIDPOINT_STR "midpoint"
 #define RUNGE_KUTTA_STR "runge_kutta"
 #define TIMELINE_STR "timeline"
 #define ERRORS_STR "errors"
+#define WIEN_TIMELINE_STR "wien_timeline"
 
 /******************************************/
 /*        FUNCTIONS DECLARATIONS          */
@@ -33,6 +34,7 @@ Action process_args(int argc, char **argv, Method* method);
 bool check_argc(int argc);
 bool check_for_timeline (char **argv, Method *method);
 bool check_for_errors (char **argv, Method *method);
+bool check_for_wien_timeline (char **argv, Method *method);
 Method convert_str_method(char *str_method);
 
 /************************/
@@ -61,6 +63,16 @@ int main (int argc, char **argv)
         return exit_err (ALLOC_ERR);
       }
       break;
+    case WIEN_TIMELINE:
+    {
+      Vec Dr = {0, 0};
+      Vec Dv = {0, (3 * E) / B};
+      if (!export_one_wien_timeline (method, &Dr, &Dv, T))
+      {
+        return exit_err (ALLOC_ERR);
+      }
+      break;
+    }
   }
   return EXIT_SUCCESS;
 }
@@ -99,6 +111,11 @@ Action process_args(int argc, char **argv, Method* method)
     return ERRORS;
   }
 
+  if (check_for_wien_timeline (argv, method))
+  {
+    return WIEN_TIMELINE;
+  }
+
   return FAILED;
 
 }
@@ -128,6 +145,21 @@ bool check_for_timeline (char **argv, Method *method)
 bool check_for_errors (char **argv, Method *method)
 {
   if (strcmp (argv[1], ERRORS_STR) != 0)
+  {
+    return false;
+  }
+
+  *method = convert_str_method (argv[2]);
+  if (*method == NON_METHOD)
+  {
+    return false;
+  }
+  return true;
+}
+
+bool check_for_wien_timeline (char **argv, Method *method)
+{
+  if (strcmp (argv[1], WIEN_TIMELINE_STR) != 0)
   {
     return false;
   }

@@ -12,12 +12,13 @@
 /**************************/
 
 #define E 1.f
-#define B 1.f
+#define B 0.5f
 #define q 3.f
 #define m 20.f
-#define LENGTH 1.f
+#define LENGTH 5.f
 #define R 0.03f
 #define DIVISION_CONST 500
+#define V 15.f
 
 /***************************/
 /*        STRUCTS          */

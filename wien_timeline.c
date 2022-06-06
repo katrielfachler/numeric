@@ -1,5 +1,15 @@
 #include "wien_timeline.h"
 
+#define WIEN_ANALYTIC_CSV "../csv_files/wien_analytic.csv"
+#define WIEN_EULER_CSV "../csv_files/wien_euler.csv"
+#define WIEN_MIDPOINT_CSV "../csv_files/wien_midpoint.csv"
+#define WIEN_RUNGE_KUTTA_CSV "../csv_files/wien_runge_kutta.csv"
+#define TIMELINE_HEADERS "iterations,time,r_y,r_z,v_y,v_z,a_y,a_z\n"
+#define TIMELINE_ROW "%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n"
+#define DID_EXIT "did exit,yes\n"
+#define DIDNT_EXIT "did exit,no\n"
+#define WRITE_MODE "w"
+
 /******************************************/
 /*        FUNCTIONS DECLARATIONS          */
 /******************************************/
@@ -9,6 +19,8 @@ void init_wien_time_line (Timeline *timeline, TimeState *starting_conditions);
 bool run_wien_alg (Timeline *timeline, NEXT_STEP_METHOD next_step_func,
               int dev_factor, double T, bool *did_exit);
 bool check_for_exit(Vec *r, bool *did_exit);
+char *get_wien_timeline_path (Method method);
+void print_wien_timeline (Timeline *timeline, char *path, bool did_exit);
 
 /***********************************************/
 /*        H FUNCTIONS IMPLEMENTATIONS          */
@@ -27,6 +39,23 @@ next_step_method, Vec *Dr, Vec *Dv, bool *did_exit)
   if (!run_wien_alg (timeline, next_step_method, dev_factor, T, did_exit))
   { return NULL; }
   return timeline;
+}
+
+bool export_one_wien_timeline (Method method, Vec *Dr, Vec *Dv, double T)
+{
+  bool did_exit;
+  Timeline *timeline = create_wien_time_line (DIVISION_CONST, T, get_method
+  (method), Dr, Dv, &did_exit);
+  if (!timeline)
+  {
+    free_time_line (&timeline);
+    return false;
+  }
+  char *path = get_wien_timeline_path (method);
+  print_wien_timeline (timeline, path, did_exit);
+  free (path);
+  free_time_line (&timeline);
+  return true;
 }
 
 /***************************/
@@ -70,7 +99,8 @@ bool run_wien_alg (Timeline *timeline, NEXT_STEP_METHOD next_step_func,
                    int dev_factor, double T, bool *did_exit)
 {
   double Dt = T/dev_factor;
-  for (int i = 0; i < dev_factor; i++)
+  bool stop_condition = true;
+  while (stop_condition)
   {
     TimeState *next_time_state = next_step_func (timeline->last, Dt);
     if (!next_time_state)
@@ -78,10 +108,7 @@ bool run_wien_alg (Timeline *timeline, NEXT_STEP_METHOD next_step_func,
     timeline->last->next = next_time_state;
     timeline->last = next_time_state;
     timeline->size++;
-    if (check_for_exit(timeline->last->r, did_exit))
-    {
-      break;
-    }
+    stop_condition = check_for_exit(timeline->last->r, did_exit);
   }
   return true;
 }
@@ -99,5 +126,64 @@ bool check_for_exit(Vec *r, bool *did_exit)
     return true;
   }
   return false;
+}
+
+char *get_wien_timeline_path (Method method)
+{
+  char *path = "";
+  switch (method)
+  {
+    case ANALYTIC:
+      path = WIEN_ANALYTIC_CSV;
+      break;
+
+    case EULER:
+      path = WIEN_EULER_CSV;
+      break;
+
+    case MIDPOINT:
+      path = WIEN_MIDPOINT_CSV;
+      break;
+
+    case RUNGE_KUTTA:
+      path = WIEN_RUNGE_KUTTA_CSV;
+      break;
+  }
+  char *ret = malloc (strlen (path) + 1);
+  strcpy (ret, path);
+  return ret;
+}
+
+void print_wien_timeline (Timeline *timeline, char *path, bool did_exit)
+{
+  FILE *f = fopen (path, WRITE_MODE);
+  TimeState *curr_time_state = timeline->first;
+
+  if (did_exit)
+  {
+    fprintf (f, DID_EXIT);
+    fprintf (stdout, "yes\n");
+  }
+  else
+  {
+    fprintf (f, DIDNT_EXIT);
+    fprintf (stdout, "no\n");
+  }
+
+  fprintf (f, TIMELINE_HEADERS);
+  for (int i = 0; i < timeline->size; ++i)
+  {
+    fprintf (f, TIMELINE_ROW,
+             i,
+             curr_time_state->time,
+             curr_time_state->r->_y,
+             curr_time_state->r->_z,
+             curr_time_state->v->_y,
+             curr_time_state->v->_z,
+             curr_time_state->a->_y,
+             curr_time_state->a->_z);
+    curr_time_state = curr_time_state->next;
+  }
+  fclose (f);
 }
 
