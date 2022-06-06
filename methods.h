@@ -2,6 +2,7 @@
 #define METHODS_H
 
 #include "structs.h"
+#include <math.h>
 
 typedef enum Method
 {

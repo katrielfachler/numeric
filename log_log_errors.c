@@ -1,4 +1,5 @@
 #include "log_log_errors.h"
+#include <math.h>
 
 #define ERRORS_HEADERS "Dt,err_r,err_v\n"
 #define EULER_ERRORS_CSV "../csv_files/euler_errors.csv"

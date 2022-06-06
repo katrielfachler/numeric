@@ -1,12 +1,13 @@
 #include "log_log_errors.h"
-#include "wien_timeline.h"
+#include "wien_filter.h"
 
 typedef enum Action
 {
     FAILED,
     TIMELINE,
     ERRORS,
-    WIEN_TIMELINE
+    WIEN_TIMELINE,
+    WIEN_FILTER
 }Action;
 
 /**********************************/
@@ -14,15 +15,16 @@ typedef enum Action
 /**********************************/
 
 #define ALLOC_ERR "Error: failed to allocate memory."
-#define ARGS_ERR "Usage: <timeline|errors|wien_timeline> "\
+#define ARGS_ERR "Usage: <timeline|errors|wien_timeline|wien_filter> "\
 "<analytic|euler|midpoint|runge_kutta>.\n"
 #define ANALYTIC_STR "analytic"
 #define EULER_STR "euler"
 #define MIDPOINT_STR "midpoint"
 #define RUNGE_KUTTA_STR "runge_kutta"
 #define TIMELINE_STR "timeline"
-#define ERRORS_STR "errors"
 #define WIEN_TIMELINE_STR "wien_timeline"
+#define WIEN_FILTER_STR "wien_filter"
+#define ERRORS_STR "errors"
 
 /******************************************/
 /*        FUNCTIONS DECLARATIONS          */
@@ -35,6 +37,7 @@ bool check_argc(int argc);
 bool check_for_timeline (char **argv, Method *method);
 bool check_for_errors (char **argv, Method *method);
 bool check_for_wien_timeline (char **argv, Method *method);
+bool check_for_wien_filter (char **argv, Method *method);
 Method convert_str_method(char *str_method);
 
 /************************/
@@ -73,6 +76,12 @@ int main (int argc, char **argv)
       }
       break;
     }
+      case WIEN_FILTER:
+        if (!export_wien_filter (method, T))
+        {
+          return exit_err (ALLOC_ERR);
+        }
+      break;
   }
   return EXIT_SUCCESS;
 }
@@ -116,9 +125,17 @@ Action process_args(int argc, char **argv, Method* method)
     return WIEN_TIMELINE;
   }
 
-  return FAILED;
+  if (check_for_wien_filter (argv, method))
+  {
+      return WIEN_FILTER;
+  }
 
+  return FAILED;
 }
+
+/****************************************/
+/*        PROCESS ARGS HELPERS          */
+/****************************************/
 
 bool check_argc(int argc)
 {
@@ -131,7 +148,6 @@ bool check_for_timeline (char **argv, Method *method)
   {
     return false;
   }
-
 
   *method = convert_str_method(argv[2]);
   if (*method == NON_METHOD)
@@ -160,6 +176,21 @@ bool check_for_errors (char **argv, Method *method)
 bool check_for_wien_timeline (char **argv, Method *method)
 {
   if (strcmp (argv[1], WIEN_TIMELINE_STR) != 0)
+  {
+    return false;
+  }
+
+  *method = convert_str_method (argv[2]);
+  if (*method == NON_METHOD)
+  {
+    return false;
+  }
+  return true;
+}
+
+bool check_for_wien_filter (char **argv, Method *method)
+{
+  if (strcmp (argv[1], WIEN_FILTER_STR) != 0)
   {
     return false;
   }

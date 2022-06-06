@@ -1,4 +1,5 @@
 #include "methods.h"
+#include <math.h>
 
 /******************************************/
 /*        FUNCTIONS DECLARATIONS          */

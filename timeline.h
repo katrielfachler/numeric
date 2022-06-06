@@ -2,6 +2,7 @@
 #define TIMELINE_H
 
 # include "methods.h"
+#include <math.h>
 
 Timeline *
 create_time_line (int dev_factor, double T, NEXT_STEP_METHOD next_step_method);
